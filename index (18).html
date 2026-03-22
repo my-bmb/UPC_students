@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Image to PDF | Simple Converter</title>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- SortableJS for reordering image previews -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #fafafa;
+      min-height: 100vh;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    }
+
+    /* Fixed Navigation Bar */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      background: #ffffff;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .nav-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .nav-stats {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .nav-badge {
+      background: #f3f4f6;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .scroll-top-btn {
+      background: #f3f4f6;
+      border: none;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1.5rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      color: #374151;
+      transition: 0.2s;
+    }
+
+    .scroll-top-btn:active {
+      background: #e5e7eb;
+      transform: scale(0.96);
+    }
+
+    .app-container {
+      max-width: 100%;
+      width: 100%;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+
+    .app-content {
+      padding: 1.25rem;
+      padding-top: 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      letter-spacing: -0.2px;
+      margin-bottom: 0.35rem;
+    }
+
+    .subhead {
+      color: #6b7280;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      font-weight: 400;
+    }
+
+    .formats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .format-tag {
+      background: #f3f4f6;
+      color: #6b7280;
+      padding: 0.25rem 0.65rem;
+      border-radius: 1rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    .upload-zone {
+      background: #ffffff;
+      border: 1.5px dashed #d1d5db;
+      border-radius: 1rem;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-zone.drag-over {
+      background: #f9fafb;
+      border-color: #9ca3af;
+    }
+
+    .upload-icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+      opacity: 0.7;
+    }
+
+    .upload-zone p {
+      color: #374151;
+      font-weight: 500;
+      margin: 0.35rem 0;
+      font-size: 0.9rem;
+    }
+
+    .upload-hint {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      margin-top: 0.35rem;
+    }
+
+    .btn-upload {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      padding: 0.5rem 1.2rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      color: #374151;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-upload:active {
+      background: #e5e7eb;
+      transform: scale(0.98);
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin: 1rem 0 1.25rem 0;
+    }
+
+    .primary-btn {
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.2s;
+      background: #111827;
+      color: white;
+      width: 100%;
+      max-width: 260px;
+    }
+
+    .primary-btn:active:not(:disabled) {
+      background: #1f2937;
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .preview-section {
+      margin-top: 0.25rem;
+    }
+
+    .section-title {
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .reorder-note {
+      font-size: 0.65rem;
+      font-weight: normal;
+      background: #f3f4f6;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+      color: #6b7280;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.85rem;
+      background: #ffffff;
+      border-radius: 1rem;
+      min-height: 120px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 0.25rem;
+      scroll-behavior: smooth;
+    }
+
+    /* Custom scrollbar */
+    .image-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .image-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .image-grid::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+
+    .image-grid::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+
+    .image-card {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      cursor: grab;
+      border: 1px solid #e5e7eb;
+      position: relative;
+      transition: box-shadow 0.15s;
+    }
+
+    .image-card:active {
+      cursor: grabbing;
+    }
+
+    .image-number {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      font-size: 0.7rem;
+      z-index: 10;
+    }
+
+    .image-card img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      display: block;
+      background: #f9fafb;
+    }
+
+    .card-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.6rem;
+      background: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #6b7280;
+      border-top: 1px solid #f3f4f6;
+      gap: 0.5rem;
+    }
+
+    .card-info > div:first-child {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .image-size {
+      font-size: 0.55rem;
+      color: #9ca3af;
+      display: block;
+      margin-top: 0.2rem;
+    }
+
+    .remove-img {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #9ca3af;
+      transition: 0.1s;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .remove-img:active {
+      background: #f3f4f6;
+      color: #ef4444;
+    }
+
+    .empty-preview {
+      text-align: center;
+      padding: 1.5rem;
+      background: #fafafa;
+      border-radius: 0.75rem;
+      color: #9ca3af;
+      border: 1px solid #f0f0f0;
+      font-size: 0.85rem;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s;
+    }
+
+    .loading-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .loading-card {
+      background: #ffffff;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e5e7eb;
+      width: 85%;
+      max-width: 280px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #111827;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 0.75rem auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-card p {
+      font-size: 0.85rem;
+      margin: 0.25rem 0;
+      color: #374151;
+    }
+
+    .loading-card p:last-of-type {
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    .success-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: #111827;
+      color: white;
+      padding: 0.7rem 1rem;
+      border-radius: 2rem;
+      font-weight: 400;
+      font-size: 0.85rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(100px);
+      transition: transform 0.3s ease;
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    .success-toast.show {
+      transform: translateY(0);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.6rem;
+      color: #9ca3af;
+      padding: 0.75rem;
+      border-top: 1px solid #f0f0f0;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 480px) {
+      .nav-bar {
+        padding: 0.6rem 1rem;
+      }
+      
+      .nav-title {
+        font-size: 1rem;
+      }
+      
+      .nav-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+      }
+      
+      .scroll-top-btn {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.6rem;
+      }
+      
+      .app-content {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 1.35rem;
+      }
+      
+      .formats-grid {
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+      }
+      
+      .format-tag {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.5rem;
+      }
+      
+      .upload-zone {
+        padding: 1.2rem 0.8rem;
+      }
+      
+      .upload-icon {
+        font-size: 1.75rem;
+      }
+      
+      .upload-zone p {
+        font-size: 0.85rem;
+      }
+      
+      .upload-hint {
+        font-size: 0.65rem;
+      }
+      
+      .btn-upload {
+        padding: 0.45rem 1rem;
+        font-size: 0.8rem;
+      }
+      
+      .primary-btn {
+        padding: 0.65rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 100%;
+      }
+      
+      .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.7rem;
+        max-height: 55vh;
+      }
+      
+      .image-card img {
+        height: 110px;
+      }
+      
+      .image-number {
+        width: 22px;
+        height: 22px;
+        font-size: 0.65rem;
+      }
+      
+      .card-info {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.6rem;
+      }
+      
+      .image-size {
+        font-size: 0.5rem;
+      }
+    }
+
+    /* Disable drag on scrollbar area */
+    .image-grid.disable-drag {
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Fixed Navigation Bar -->
+<div class="nav-bar">
+  <div class="nav-title">Image to PDF</div>
+  <div class="nav-stats">
+    <span class="nav-badge" id="navImageCount">0 images</span>
+    <button class="scroll-top-btn" id="scrollTopBtn">↑ Top</button>
+  </div>
+</div>
+
+<div class="app-container">
+  <div class="app-content">
+    <div class="subhead">Upload, reorder, convert — auto download</div>
+    
+    <div class="formats-grid">
+      <span class="format-tag">JPEG</span>
+      <span class="format-tag">JPG</span>
+      <span class="format-tag">PNG</span>
+      <span class="format-tag">GIF</span>
+      <span class="format-tag">WEBP</span>
+      <span class="format-tag">BMP</span>
+      <span class="format-tag">TIFF</span>
+      <span class="format-tag">SVG</span>
+      <span class="format-tag">ICO</span>
+      <span class="format-tag">HEIC</span>
+      <span class="format-tag">HEIF</span>
+      <span class="format-tag">AVIF</span>
+      <span class="format-tag">JFIF</span>
+      <span class="format-tag">JPE</span>
+      <span class="format-tag">JIF</span>
+      <span class="format-tag">PJPEG</span>
+    </div>
+
+    <div id="dropzone" class="upload-zone">
+      <div class="upload-icon">📷</div>
+      <p>Drop images here or click to browse</p>
+      <div class="upload-hint">All formats supported · Original quality</div>
+      <button id="triggerUploadBtn" class="btn-upload">Select images</button>
+      <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    </div>
+
+    <div class="button-container">
+      <button id="convertBtn" class="primary-btn" disabled>Convert to PDF</button>
+    </div>
+
+    <div class="preview-section">
+      <div class="section-title">
+        <span>Images <span class="reorder-note">drag to reorder</span></span>
+        <span id="imageCountBadge" style="font-size:0.7rem; background:#f3f4f6; padding:0.2rem 0.6rem; border-radius:20px; color:#6b7280;">0</span>
+      </div>
+      <div id="imageGridContainer" class="image-grid">
+        <div class="empty-preview">No images added</div>
+      </div>
+    </div>
+  </div>
+  <footer>PDF · A4 size · Auto download</footer>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <p id="loadingMessage">Creating PDF...</p>
+    <p>Please wait</p>
+  </div>
+</div>
+
+<div id="successToast" class="success-toast">
+  ✓ PDF downloaded
+</div>
+
+<script>
+  (function() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const triggerBtn = document.getElementById('triggerUploadBtn');
+    const imageGrid = document.getElementById('imageGridContainer');
+    const convertBtn = document.getElementById('convertBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const imageCountBadge = document.getElementById('imageCountBadge');
+    const navImageCount = document.getElementById('navImageCount');
+    const successToast = document.getElementById('successToast');
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    let imagesData = [];
+    let sortableInstance = null;
+    let isConverting = false;
+    let isDragging = false;
+
+    // Scroll to top functionality
+    scrollTopBtn.addEventListener('click', () => {
+      imageGrid.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+
+    // Prevent drag when scrolling on the grid container
+    imageGrid.addEventListener('scroll', () => {
+      if (sortableInstance) {
+        // Temporarily disable sortable during scroll
+        sortableInstance.option('disabled', true);
+        clearTimeout(window.scrollDisableTimeout);
+        window.scrollDisableTimeout = setTimeout(() => {
+          if (sortableInstance) {
+            sortableInstance.option('disabled', false);
+          }
+        }, 150);
+      }
+    });
+
+    function generateId() {
+      return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
+    }
+
+    function showToast(message) {
+      successToast.textContent = message || '✓ PDF downloaded';
+      successToast.classList.add('show');
+      setTimeout(() => {
+        successToast.classList.remove('show');
+      }, 2000);
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function getImageFormat(mimeType, fileName) {
+      const formats = {
+        'image/jpeg': 'JPEG',
+        'image/jpg': 'JPEG',
+        'image/png': 'PNG',
+        'image/gif': 'GIF',
+        'image/webp': 'WEBP',
+        'image/bmp': 'BMP',
+        'image/tiff': 'TIFF',
+        'image/svg+xml': 'SVG',
+        'image/x-icon': 'ICO',
+        'image/vnd.microsoft.icon': 'ICO',
+        'image/heic': 'HEIC',
+        'image/heif': 'HEIF',
+        'image/avif': 'AVIF'
+      };
+      
+      if (formats[mimeType]) return formats[mimeType];
+      
+      const ext = fileName.split('.').pop().toLowerCase();
+      const extFormats = {
+        'jpg': 'JPEG', 'jpeg': 'JPEG', 'jpe': 'JPE', 'jfif': 'JFIF', 'jif': 'JIF',
+        'png': 'PNG', 'gif': 'GIF', 'webp': 'WEBP', 'bmp': 'BMP', 'tiff': 'TIFF', 'tif': 'TIFF',
+        'svg': 'SVG', 'ico': 'ICO', 'heic': 'HEIC', 'heif': 'HEIF', 'avif': 'AVIF',
+        'pjpeg': 'PJPEG'
+      };
+      
+      return extFormats[ext] || 'IMAGE';
+    }
+
+    async function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        try {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataURL = e.target.result;
+            const img = new Image();
+            img.onload = () => {
+              resolve({
+                id: generateId(),
+                file: file,
+                originalDataURL: dataURL,
+                width: img.width,
+                height: img.height,
+                fileName: file.name,
+                fileSize: file.size,
+                format: getImageFormat(file.type, file.name)
+              });
+            };
+            img.onerror = () => reject(new Error('Failed to decode: ' + file.name));
+            img.src = dataURL;
+          };
+          reader.onerror = () => reject(new Error('File read error'));
+          reader.readAsDataURL(file);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+
+    function updateNavCount() {
+      const count = imagesData.length;
+      navImageCount.textContent = `${count} image${count !== 1 ? 's' : ''}`;
+    }
+
+    function renderGallery() {
+      if (!imageGrid) return;
+      
+      if (imagesData.length === 0) {
+        imageGrid.innerHTML = `<div class="empty-preview">No images added</div>`;
+        if (sortableInstance) sortableInstance.destroy();
+        sortableInstance = null;
+        convertBtn.disabled = true;
+        imageCountBadge.innerText = '0';
+        updateNavCount();
+        return;
+      }
+
+      let html = '';
+      for (let i = 0; i < imagesData.length; i++) {
+        const img = imagesData[i];
+        const number = i + 1;
+        const shortName = img.fileName.length > 14 ? img.fileName.slice(0, 11) + '...' : img.fileName;
+        html += `
+          <div class="image-card" data-id="${img.id}">
+            <div class="image-number">${number}</div>
+            <img src="${img.originalDataURL}" alt="${img.fileName}" loading="lazy">
+            <div class="card-info">
+              <div>
+                <span>${shortName}</span>
+                <span class="image-size">${img.width}×${img.height} · ${img.format}</span>
+              </div>
+              <button class="remove-img" data-id="${img.id}">✕</button>
+            </div>
+          </div>
+        `;
+      }
+      imageGrid.innerHTML = html;
+      imageCountBadge.innerText = imagesData.length;
+      updateNavCount();
+
+      document.querySelectorAll('.remove-img').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          removeImageById(id);
+        });
+      });
+
+      if (sortableInstance) sortableInstance.destroy();
+      sortableInstance = new Sortable(imageGrid, {
+        animation: 200,
+        handle: '.image-card',
+        draggable: '.image-card',
+        onStart: () => {
+          isDragging = true;
+        },
+        onEnd: () => {
+          isDragging = false;
+          const cards = [...document.querySelectorAll('.image-card')];
+          const newOrder = [];
+          for (let card of cards) {
+            const id = card.getAttribute('data-id');
+            const found = imagesData.find(item => item.id === id);
+            if (found) newOrder.push(found);
+          }
+          if (newOrder.length === imagesData.length) {
+            imagesData = newOrder;
+          }
+          renderGallery();
+        }
+      });
+      
+      convertBtn.disabled = false;
+    }
+
+    function removeImageById(id) {
+      const index = imagesData.findIndex(img => img.id === id);
+      if (index !== -1) {
+        imagesData.splice(index, 1);
+        renderGallery();
+      }
+    }
+
+    async function addFiles(files) {
+      const validFiles = Array.from(files);
+      
+      if (validFiles.length === 0) {
+        alert('Please select images');
+        return;
+      }
+
+      loadingOverlay.classList.add('active');
+      loadingMessage.textContent = 'Loading images...';
+      const newImages = [];
+      let errorCount = 0;
+      
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i];
+        loadingMessage.textContent = `Loading ${i + 1}/${validFiles.length}...`;
+        try {
+          const imgData = await loadImage(file);
+          newImages.push(imgData);
+        } catch (err) {
+          console.warn(err);
+          errorCount++;
+        }
+      }
+      
+      if (errorCount > 0 && newImages.length === 0) {
+        alert('No valid images could be loaded. Please try different files.');
+      }
+      
+      if (newImages.length > 0) {
+        imagesData.push(...newImages);
+        renderGallery();
+        // Auto scroll to bottom when adding many images
+        setTimeout(() => {
+          imageGrid.scrollTo({
+            top: imageGrid.scrollHeight,
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+      
+      loadingOverlay.classList.remove('active');
+    }
+
+    function autoDownloadPDF(pdfBlob) {
+      if (!pdfBlob) return;
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(pdfBlob);
+      link.href = url;
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      link.download = `images_${timestamp}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showToast('✓ PDF downloaded');
+    }
+
+    async function generatePDF() {
+      if (imagesData.length === 0) {
+        alert('No images to convert');
+        return;
+      }
+      
+      if (isConverting) return;
+      
+      isConverting = true;
+      convertBtn.disabled = true;
+      convertBtn.textContent = 'Creating...';
+      loadingOverlay.classList.add('active');
+      loadingMessage.textContent = 'Creating PDF...';
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        
+        let pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        for (let idx = 0; idx < imagesData.length; idx++) {
+          const imgItem = imagesData[idx];
+          loadingMessage.textContent = `Processing ${idx + 1}/${imagesData.length}...`;
+          
+          const img = new Image();
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Image load failed'));
+            img.src = imgItem.originalDataURL;
+          });
+          
+          const imgAspect = img.width / img.height;
+          const pageAspect = pdfWidth / pdfHeight;
+          
+          let finalWidthMM, finalHeightMM, xOffset = 0, yOffset = 0;
+          
+          if (imgAspect > pageAspect) {
+            finalWidthMM = pdfWidth;
+            finalHeightMM = pdfWidth / imgAspect;
+            yOffset = (pdfHeight - finalHeightMM) / 2;
+          } else {
+            finalHeightMM = pdfHeight;
+            finalWidthMM = pdfHeight * imgAspect;
+            xOffset = (pdfWidth - finalWidthMM) / 2;
+          }
+          
+          if (idx !== 0) {
+            pdf.addPage();
+          }
+          
+          let imageFormat = 'JPEG';
+          const format = imgItem.format;
+          if (format === 'PNG') imageFormat = 'PNG';
+          else if (format === 'GIF') imageFormat = 'GIF';
+          
+          pdf.addImage(
+            imgItem.originalDataURL,
+            imageFormat,
+            xOffset,
+            yOffset,
+            finalWidthMM,
+            finalHeightMM,
+            undefined,
+            'NONE'
+          );
+        }
+        
+        const pdfBlob = pdf.output('blob');
+        autoDownloadPDF(pdfBlob);
+        
+        loadingOverlay.classList.remove('active');
+        
+      } catch (error) {
+        console.error('Error:', error);
+        loadingOverlay.classList.remove('active');
+        alert('PDF creation failed: ' + error.message);
+      } finally {
+        isConverting = false;
+        convertBtn.disabled = false;
+        convertBtn.textContent = 'Convert to PDF';
+        if (imagesData.length === 0) {
+          convertBtn.disabled = true;
+        }
+      }
+    }
+
+    triggerBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        addFiles(e.target.files);
+      }
+      fileInput.value = '';
+    });
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length) addFiles(files);
+    });
+
+    convertBtn.addEventListener('click', generatePDF);
+    
+    renderGallery();
+  })();
+</script>
+</body>
+</html>
